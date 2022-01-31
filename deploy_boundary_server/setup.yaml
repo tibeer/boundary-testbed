@@ -1,0 +1,4 @@
+- name: Install boundary server
+  hosts: all
+  roles:
+    - role: boundary_server

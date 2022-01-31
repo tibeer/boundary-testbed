@@ -1,0 +1,34 @@
+---
+# tasks file for boundary_server
+- name: Create random passwords
+  set_fact:
+    key_root: "{{ lookup('password', '/dev/null length=32') | b64encode }}"
+    key_worker: "{{ lookup('password', '/dev/null length=32') | b64encode }}"
+    key_recovery:  "{{ lookup('password', '/dev/null length=32') | b64encode }}"
+
+- name: Create docker-compose folder
+  ansible.builtin.file:
+    path: "/home/{{ ansible_user }}/boundary"
+    state: directory
+
+- name: Copy docker-compose file
+  ansible.builtin.copy:
+    src: docker-compose.yml
+    dest: "/home/{{ ansible_user }}/boundary/docker-compose.yml"
+ 
+- name: Template boundary.hcl file
+  ansible.builtin.template:
+    src: boundary.hcl.j2
+    dest: "/home/{{ ansible_user }}/boundary/boundary.hcl"
+
+- name: Start containers
+  ansible.builtin.shell:
+    cmd: "docker compose up -d"
+  args:
+    chdir: "/home/{{ ansible_user }}/boundary/"
+
+- name: Temporarily save recovery key
+  ansible.builtin.template:
+    src: recovery.hcl.j2
+    dest: "../recovery.hcl"
+  delegate_to: 127.0.0.1
